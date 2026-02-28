@@ -8,6 +8,7 @@ import 'package:lovepin/core/constants/app_fonts.dart';
 import 'package:lovepin/core/router/app_router.dart';
 import 'package:lovepin/data/local/local_cache.dart';
 import 'package:lovepin/data/supabase/couple_repository.dart';
+import 'package:lovepin/data/supabase/supabase_client.dart';
 import 'package:lovepin/features/auth/providers/auth_provider.dart';
 
 /// Full-screen splash that initialises the local cache and resolves the
@@ -45,6 +46,24 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
       if (user == null) {
         context.goNamed(RouteNames.login);
+        return;
+      }
+
+      // Check if the user has completed profile setup.
+      final db = SupabaseClientWrapper.instance;
+      final profileRows = await db
+          .database('users')
+          .select('display_name')
+          .eq('id', user.id);
+
+      if (!mounted) return;
+
+      final hasProfile = profileRows.isNotEmpty &&
+          profileRows.first['display_name'] != null &&
+          (profileRows.first['display_name'] as String).isNotEmpty;
+
+      if (!hasProfile) {
+        context.goNamed(RouteNames.profileSetup);
         return;
       }
 
