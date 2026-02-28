@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import 'app.dart';
+import 'data/local/local_cache.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +33,7 @@ Future<void> main() async {
 
   // Initialise Hive for local message caching (NF-04).
   await Hive.initFlutter();
+  await LocalCache.instance.init();
 
   // Initialise Supabase client.
   await Supabase.initialize(
