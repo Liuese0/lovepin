@@ -32,7 +32,12 @@ final isCoupleLinkedProvider = StateProvider<bool>((ref) {
 });
 
 /// The currently signed-in Supabase [User], or `null`.
+///
+/// Watches [authStateProvider] so that the value is recomputed whenever the
+/// auth state changes (sign-in, sign-out, token refresh, etc.).
 final currentUserProvider = Provider<User?>((ref) {
-  final repo = ref.watch(authRepositoryProvider);
+  // Subscribe to auth state changes so this provider re-evaluates.
+  ref.watch(authStateProvider);
+  final repo = ref.read(authRepositoryProvider);
   return repo.getCurrentUser();
 });
