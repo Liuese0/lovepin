@@ -51,6 +51,7 @@ final _shellNavigatorKey = GlobalKey<NavigatorState>();
 /// The main GoRouter provider, scoped to Riverpod.
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
+  final isCoupleLinked = ref.watch(isCoupleLinkedProvider);
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
@@ -58,7 +59,6 @@ final routerProvider = Provider<GoRouter>((ref) {
     debugLogDiagnostics: true,
     redirect: (BuildContext context, GoRouterState state) {
       final isAuthenticated = authState.valueOrNull != null;
-      final isCoupleLinked = ref.read(isCoupleLinkedProvider);
       final currentPath = state.matchedLocation;
 
       // Allow splash screen to load without redirecting.
