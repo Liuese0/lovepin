@@ -40,7 +40,12 @@ Future<void> main() async {
   );
 
   // Initialise Firebase (required for FCM push notifications — F-11).
-  await Firebase.initializeApp();
+  // Wrapped in try-catch so the app still launches without google-services.json.
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint('Firebase init skipped: $e');
+  }
 
   runApp(
     const ProviderScope(
