@@ -66,13 +66,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         return null;
       }
 
-      // If the auth state is still loading, stay on splash.
+      // If the auth state is still loading, allow public paths through
+      // so the splash bootstrap can navigate to login/signup.
+      final publicPaths = {RoutePaths.login, RoutePaths.signup};
       if (authState.isLoading) {
-        return RoutePaths.splash;
+        return publicPaths.contains(currentPath) ? null : RoutePaths.splash;
       }
 
       // Unauthenticated users may only visit login or signup.
-      final publicPaths = {RoutePaths.login, RoutePaths.signup};
       if (!isAuthenticated) {
         return publicPaths.contains(currentPath) ? null : RoutePaths.login;
       }
