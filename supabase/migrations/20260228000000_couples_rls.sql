@@ -3,6 +3,17 @@ ALTER TABLE couples ENABLE ROW LEVEL SECURITY;
 ALTER TABLE couple_members ENABLE ROW LEVEL SECURITY;
 
 -- =============================================================================
+-- Drop existing policies (safe to run if they don't exist)
+-- =============================================================================
+DROP POLICY IF EXISTS "Authenticated users can create couples" ON couples;
+DROP POLICY IF EXISTS "Users can read own couple" ON couples;
+DROP POLICY IF EXISTS "Users can update own couple" ON couples;
+DROP POLICY IF EXISTS "Anyone can read pending couples by invite code" ON couples;
+DROP POLICY IF EXISTS "Users can insert own membership" ON couple_members;
+DROP POLICY IF EXISTS "Users can read own membership" ON couple_members;
+DROP POLICY IF EXISTS "Users can read fellow members" ON couple_members;
+
+-- =============================================================================
 -- couples table policies
 -- =============================================================================
 
