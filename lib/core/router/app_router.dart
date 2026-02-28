@@ -48,17 +48,32 @@ class RouteNames {
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
+/// Notifier that triggers GoRouter redirect re-evaluation when
+/// auth or couple-link state changes, without recreating the router.
+class _RouterRefreshNotifier extends ChangeNotifier {
+  void notify() => notifyListeners();
+}
+
 /// The main GoRouter provider, scoped to Riverpod.
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
-  final isCoupleLinked = ref.watch(isCoupleLinkedProvider);
+  final refreshNotifier = _RouterRefreshNotifier();
+
+  // Listen (not watch) so the provider does NOT rebuild — the existing
+  // GoRouter instance stays alive and only its redirect is re-evaluated.
+  ref.listen(authStateProvider, (_, __) => refreshNotifier.notify());
+  ref.listen(isCoupleLinkedProvider, (_, __) => refreshNotifier.notify());
+
+  ref.onDispose(() => refreshNotifier.dispose());
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: RoutePaths.splash,
     debugLogDiagnostics: true,
+    refreshListenable: refreshNotifier,
     redirect: (BuildContext context, GoRouterState state) {
-      final isAuthenticated = authState.valueOrNull != null;
+      final authAsync = ref.read(authStateProvider);
+      final isCoupleLinked = ref.read(isCoupleLinkedProvider);
+      final isAuthenticated = authAsync.valueOrNull != null;
       final currentPath = state.matchedLocation;
 
       // Allow splash screen to load without redirecting.
@@ -69,7 +84,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // If the auth state is still loading, allow public paths through
       // so the splash bootstrap can navigate to login/signup.
       final publicPaths = {RoutePaths.login, RoutePaths.signup};
-      if (authState.isLoading) {
+      if (authAsync.isLoading) {
         return publicPaths.contains(currentPath) ? null : RoutePaths.splash;
       }
 
