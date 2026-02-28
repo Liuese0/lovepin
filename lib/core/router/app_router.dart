@@ -73,7 +73,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (BuildContext context, GoRouterState state) {
       final authAsync = ref.read(authStateProvider);
       final isCoupleLinked = ref.read(isCoupleLinkedProvider);
-      final isAuthenticated = authAsync.valueOrNull != null;
+      final isAuthenticated = authAsync.valueOrNull?.session != null;
       final currentPath = state.matchedLocation;
 
       // Allow splash screen to load without redirecting.
