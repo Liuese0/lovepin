@@ -8,7 +8,6 @@
     android:background="#FFD6E0"
     android:gravity="center_vertical">
 
-    <!-- Sender name / header with heart icon -->
     <TextView
         android:id="@+id/widget_sender"
         android:layout_width="wrap_content"
@@ -18,19 +17,13 @@
         android:textStyle="bold"
         android:textColor="#FF8FAB"
         android:maxLines="1"
-        android:drawableStart="@android:drawable/btn_star_big_on"
-        android:drawablePadding="4dp"
         android:ellipsize="end" />
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="8dp" />
-
-    <!-- Message content -->
     <TextView
         android:id="@+id/widget_message"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:text="No messages yet"
         android:textSize="16sp"
         android:textColor="#2D2D2D"
@@ -38,15 +31,11 @@
         android:ellipsize="end"
         android:lineSpacingMultiplier="1.2" />
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="6dp" />
-
-    <!-- Timestamp -->
     <TextView
         android:id="@+id/widget_timestamp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
         android:textSize="11sp"
         android:textColor="#FF8FAB"
         android:maxLines="1"
