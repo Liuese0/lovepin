@@ -9,6 +9,7 @@ import 'package:lovepin/core/constants/app_fonts.dart';
 import 'package:lovepin/core/constants/app_sizes.dart';
 import 'package:lovepin/core/router/app_router.dart';
 import 'package:lovepin/data/local/local_cache.dart';
+import 'package:lovepin/data/supabase/auth_repository.dart';
 import 'package:lovepin/features/auth/providers/auth_provider.dart';
 
 /// Screen where users create an invite code or join an existing couple.
@@ -239,6 +240,25 @@ class _CoupleLinkScreenState extends ConsumerState<CoupleLinkScreen> {
                             ),
                           )
                         : const Text('Join'),
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Sign out
+                TextButton(
+                  onPressed: () async {
+                    final authRepo = ref.read(authRepositoryProvider);
+                    await authRepo.signOut();
+                    await LocalCache.instance.clear();
+                    if (!mounted) return;
+                    context.goNamed(RouteNames.login);
+                  },
+                  child: Text(
+                    '로그아웃',
+                    style: GoogleFonts.nunito(
+                      fontSize: AppFonts.caption,
+                      color: AppColors.textSecondary.withValues(alpha: 0.6),
+                    ),
                   ),
                 ),
               ],
