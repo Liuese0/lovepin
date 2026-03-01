@@ -86,6 +86,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         await LocalCache.instance.saveCoupleInfo(
           coupleId: couple.id,
           partnerId: partner?.id ?? '',
+          partnerName: partner?.displayName ?? '',
         );
 
         if (!mounted) return;

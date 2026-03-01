@@ -77,6 +77,7 @@ class _CoupleLinkScreenState extends ConsumerState<CoupleLinkScreen> {
       await LocalCache.instance.saveCoupleInfo(
         coupleId: couple.id,
         partnerId: partner?.id ?? '',
+        partnerName: partner?.displayName ?? '',
       );
 
       if (!mounted) return;

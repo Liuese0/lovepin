@@ -90,6 +90,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         await LocalCache.instance.saveCoupleInfo(
           coupleId: couple.id,
           partnerId: partner?.id ?? '',
+          partnerName: partner?.displayName ?? '',
         );
 
         if (!mounted) return;

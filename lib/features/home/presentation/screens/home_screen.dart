@@ -37,13 +37,26 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Lovepin',
-          style: GoogleFonts.caveat(
-            fontSize: AppFonts.h1,
-            fontWeight: AppFonts.bold,
-            color: AppColors.pinkDark,
-          ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Lovepin',
+              style: GoogleFonts.caveat(
+                fontSize: AppFonts.h1,
+                fontWeight: AppFonts.bold,
+                color: AppColors.pinkDark,
+              ),
+            ),
+            if (LocalCache.instance.getPartnerName()?.isNotEmpty == true)
+              Text(
+                'with ${LocalCache.instance.getPartnerName()}',
+                style: GoogleFonts.nunito(
+                  fontSize: AppFonts.caption,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+          ],
         ),
         actions: [
           IconButton(

@@ -25,6 +25,7 @@ class LocalCache {
   static const _keyLatestMessage = 'latest_message';
   static const _keyCoupleId = 'couple_id';
   static const _keyPartnerId = 'partner_id';
+  static const _keyPartnerName = 'partner_name';
   static const _keySelectedThemeId = 'selected_theme_id';
   static const _keyCachedMessages = 'cached_messages';
   static const _keyRememberMe = 'remember_me';
@@ -64,13 +65,15 @@ class LocalCache {
   // Couple info
   // ---------------------------------------------------------------------------
 
-  /// Cache the [coupleId] and [partnerId] for quick offline access.
+  /// Cache the [coupleId], [partnerId], and [partnerName] for quick offline access.
   Future<void> saveCoupleInfo({
     required String coupleId,
     required String partnerId,
+    String partnerName = '',
   }) async {
     await _box.put(_keyCoupleId, coupleId);
     await _box.put(_keyPartnerId, partnerId);
+    await _box.put(_keyPartnerName, partnerName);
   }
 
   /// Retrieve the cached couple ID, or `null`.
@@ -81,6 +84,11 @@ class LocalCache {
   /// Retrieve the cached partner ID, or `null`.
   String? getPartnerId() {
     return _box.get(_keyPartnerId) as String?;
+  }
+
+  /// Retrieve the cached partner display name, or `null`.
+  String? getPartnerName() {
+    return _box.get(_keyPartnerName) as String?;
   }
 
   // ---------------------------------------------------------------------------

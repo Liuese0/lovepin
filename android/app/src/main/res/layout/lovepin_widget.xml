@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#FFD6E0">
+
+    <!-- Sender name / header -->
+    <TextView
+        android:id="@+id/widget_sender"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Lovepin"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="#FF8FAB"
+        android:maxLines="1"
+        android:ellipsize="end" />
+
+    <!-- Image (hidden by default) -->
+    <ImageView
+        android:id="@+id/widget_image"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:scaleType="centerCrop"
+        android:visibility="gone"
+        android:adjustViewBounds="true"
+        android:contentDescription="Love note image" />
+
+    <!-- Message content -->
+    <TextView
+        android:id="@+id/widget_message"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="8dp"
+        android:text="No messages yet"
+        android:textSize="16sp"
+        android:textColor="#2D2D2D"
+        android:maxLines="4"
+        android:ellipsize="end"
+        android:gravity="center_vertical" />
+
+    <!-- Timestamp -->
+    <TextView
+        android:id="@+id/widget_timestamp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textSize="11sp"
+        android:textColor="#FF8FAB"
+        android:maxLines="1" />
+
+</LinearLayout>

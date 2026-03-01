@@ -31,6 +31,7 @@ final _coupleInfoProvider = FutureProvider.autoDispose<({String status, String p
   await LocalCache.instance.saveCoupleInfo(
     coupleId: couple.id,
     partnerId: partner?.id ?? '',
+    partnerName: partner?.displayName ?? '',
   );
 
   return (
