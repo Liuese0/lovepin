@@ -1,5 +1,5 @@
 -- =============================================================================
--- Lovepin – Full Database Setup
+-- Lovepin – Full Database Setup (idempotent)
 -- Supabase Dashboard > SQL Editor 에서 이 파일 전체를 복사하여 실행하세요.
 -- =============================================================================
 
@@ -68,7 +68,37 @@ CREATE TABLE IF NOT EXISTS messages (
 );
 
 -- =========================================================
--- 2. TRIGGER – 회원가입 시 users 행 자동 생성
+-- 2. RLS 활성화
+-- =========================================================
+
+ALTER TABLE users          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE couples        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE couple_members ENABLE ROW LEVEL SECURITY;
+
+-- =========================================================
+-- 3. 기존 정책 전부 제거 (이전 실행 잔재 정리)
+-- =========================================================
+
+-- users
+DROP POLICY IF EXISTS "Users can read own profile"    ON users;
+DROP POLICY IF EXISTS "Users can insert own profile"   ON users;
+DROP POLICY IF EXISTS "Users can update own profile"   ON users;
+DROP POLICY IF EXISTS "Users can read partner profile"  ON users;
+
+-- couples
+DROP POLICY IF EXISTS "Authenticated users can create couples"         ON couples;
+DROP POLICY IF EXISTS "Users can read own couple"                      ON couples;
+DROP POLICY IF EXISTS "Users can update own couple"                    ON couples;
+DROP POLICY IF EXISTS "Anyone can read pending couples by invite code" ON couples;
+
+-- couple_members
+DROP POLICY IF EXISTS "Users can insert own membership"       ON couple_members;
+DROP POLICY IF EXISTS "Users can read own membership"         ON couple_members;
+DROP POLICY IF EXISTS "Users can read fellow members"         ON couple_members;
+DROP POLICY IF EXISTS "Users can read own and fellow members" ON couple_members;
+
+-- =========================================================
+-- 4. FUNCTIONS
 -- =========================================================
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -90,10 +120,6 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- =========================================================
--- 3. HELPER FUNCTION
--- =========================================================
-
 CREATE OR REPLACE FUNCTION get_my_couple_ids()
 RETURNS SETOF uuid
 LANGUAGE sql
@@ -105,16 +131,10 @@ AS $$
 $$;
 
 -- =========================================================
--- 4. RLS – users
+-- 5. RLS 정책 생성
 -- =========================================================
 
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Users can read own profile"   ON users;
-DROP POLICY IF EXISTS "Users can insert own profile"  ON users;
-DROP POLICY IF EXISTS "Users can update own profile"  ON users;
-DROP POLICY IF EXISTS "Users can read partner profile" ON users;
-
+-- users
 CREATE POLICY "Users can read own profile"
   ON users FOR SELECT TO authenticated
   USING (id = auth.uid());
@@ -136,17 +156,7 @@ CREATE POLICY "Users can read partner profile"
     )
   );
 
--- =========================================================
--- 5. RLS – couples
--- =========================================================
-
-ALTER TABLE couples ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Authenticated users can create couples"        ON couples;
-DROP POLICY IF EXISTS "Users can read own couple"                     ON couples;
-DROP POLICY IF EXISTS "Users can update own couple"                   ON couples;
-DROP POLICY IF EXISTS "Anyone can read pending couples by invite code" ON couples;
-
+-- couples
 CREATE POLICY "Authenticated users can create couples"
   ON couples FOR INSERT TO authenticated
   WITH CHECK (true);
@@ -163,17 +173,7 @@ CREATE POLICY "Anyone can read pending couples by invite code"
   ON couples FOR SELECT TO authenticated
   USING (status = 'pending');
 
--- =========================================================
--- 6. RLS – couple_members
--- =========================================================
-
-ALTER TABLE couple_members ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Users can insert own membership"        ON couple_members;
-DROP POLICY IF EXISTS "Users can read own membership"          ON couple_members;
-DROP POLICY IF EXISTS "Users can read fellow members"          ON couple_members;
-DROP POLICY IF EXISTS "Users can read own and fellow members"  ON couple_members;
-
+-- couple_members
 CREATE POLICY "Users can insert own membership"
   ON couple_members FOR INSERT TO authenticated
   WITH CHECK (user_id = auth.uid());
