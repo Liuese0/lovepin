@@ -36,6 +36,24 @@ class CoupleRepository {
   }
 
   // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
+  /// Ensure the user has a row in `public.users`.
+  ///
+  /// The `on_auth_user_created` trigger normally handles this, but it may not
+  /// have fired (e.g. trigger missing on the instance, race-condition, etc.).
+  /// An upsert with `ON CONFLICT DO NOTHING` is cheap and guarantees the FK
+  /// target exists before we insert into `couple_members`.
+  Future<void> _ensureUserExists(String userId) async {
+    await _client.database('users').upsert(
+      {'id': userId, 'created_at': DateTime.now().toUtc().toIso8601String()},
+      onConflict: 'id',
+      ignoreDuplicates: true,
+    );
+  }
+
+  // ---------------------------------------------------------------------------
   // Create couple
   // ---------------------------------------------------------------------------
 
@@ -47,6 +65,9 @@ class CoupleRepository {
   /// Returns the newly created [CoupleModel].
   Future<CoupleModel> createCouple(String userId) async {
     try {
+      // Guarantee the user row exists before referencing it.
+      await _ensureUserExists(userId);
+
       const uuid = Uuid();
       final coupleId = uuid.v4();
       final inviteCode = generateInviteCode();
@@ -116,6 +137,9 @@ class CoupleRepository {
       if (couple.isExpired) {
         throw Exception('Invite code has expired.');
       }
+
+      // Guarantee the user row exists before referencing it.
+      await _ensureUserExists(userId);
 
       // Ensure the joiner is not the same user who created the couple.
       final existingMembers = await _client
