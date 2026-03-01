@@ -19,7 +19,7 @@
             android:id="@+id/widget_heart"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="\uD83D\uDC8C"
+            android:text="@string/widget_heart_emoji"
             android:textSize="16sp" />
 
         <TextView
@@ -37,14 +37,16 @@
 
     </LinearLayout>
 
-    <!-- Divider line -->
-    <View
+    <!-- Divider line (ImageView because RemoteViews does not support plain View) -->
+    <ImageView
         android:id="@+id/widget_divider"
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:layout_marginTop="10dp"
         android:layout_marginBottom="12dp"
-        android:background="@drawable/widget_divider" />
+        android:src="@drawable/widget_divider"
+        android:scaleType="fitXY"
+        android:contentDescription="@null" />
 
     <!-- Message content -->
     <TextView

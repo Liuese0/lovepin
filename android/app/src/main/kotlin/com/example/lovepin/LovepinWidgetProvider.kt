@@ -77,7 +77,7 @@ class LovepinWidgetProvider : AppWidgetProvider() {
             try {
                 val accent = Color.parseColor(accentColor)
                 val dividerColor = Color.argb(50, Color.red(accent), Color.green(accent), Color.blue(accent))
-                views.setInt(R.id.widget_divider, "setBackgroundColor", dividerColor)
+                views.setInt(R.id.widget_divider, "setColorFilter", dividerColor)
             } catch (_: Exception) {
             }
 
@@ -102,7 +102,7 @@ class LovepinWidgetProvider : AppWidgetProvider() {
 
         private fun trySetTextColor(views: RemoteViews, viewId: Int, hexColor: String) {
             try {
-                views.setTextColor(viewId, Color.parseColor(hexColor))
+                views.setInt(viewId, "setTextColor", Color.parseColor(hexColor))
             } catch (_: Exception) {
             }
         }

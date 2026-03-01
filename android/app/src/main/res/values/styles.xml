@@ -2,4 +2,5 @@
 <resources>
     <string name="app_name">Lovepin</string>
     <string name="widget_description">Shows the latest love note from your partner</string>
+    <string name="widget_heart_emoji">💌</string>
 </resources>
