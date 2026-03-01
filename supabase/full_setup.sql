@@ -1,13 +1,29 @@
 -- =============================================================================
--- Lovepin – Full Database Setup (idempotent)
+-- Lovepin – Full Database Setup (clean install)
 -- Supabase Dashboard > SQL Editor 에서 이 파일 전체를 복사하여 실행하세요.
+-- 기존 테이블을 모두 삭제하고 새로 생성합니다.
 -- =============================================================================
+
+-- =========================================================
+-- 0. 기존 트리거/테이블 완전 제거
+-- =========================================================
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
+DROP FUNCTION IF EXISTS get_my_couple_ids() CASCADE;
+
+DROP TABLE IF EXISTS messages       CASCADE;
+DROP TABLE IF EXISTS couple_members  CASCADE;
+DROP TABLE IF EXISTS couples         CASCADE;
+DROP TABLE IF EXISTS users           CASCADE;
+DROP TABLE IF EXISTS templates       CASCADE;
+DROP TABLE IF EXISTS widget_themes   CASCADE;
 
 -- =========================================================
 -- 1. TABLES
 -- =========================================================
 
-CREATE TABLE IF NOT EXISTS widget_themes (
+CREATE TABLE widget_themes (
   id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name             text    NOT NULL,
   background_color text    NOT NULL,
@@ -18,7 +34,7 @@ CREATE TABLE IF NOT EXISTS widget_themes (
   preview_url      text
 );
 
-CREATE TABLE IF NOT EXISTS templates (
+CREATE TABLE templates (
   id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   category   text    NOT NULL,
   content    text    NOT NULL,
@@ -27,7 +43,7 @@ CREATE TABLE IF NOT EXISTS templates (
   sort_order integer NOT NULL DEFAULT 0
 );
 
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE users (
   id                uuid PRIMARY KEY REFERENCES auth.users (id) ON DELETE CASCADE,
   display_name      text,
   avatar_url        text,
@@ -36,7 +52,7 @@ CREATE TABLE IF NOT EXISTS users (
   created_at        timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS couples (
+CREATE TABLE couples (
   id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   invite_code       text        NOT NULL UNIQUE,
   invite_expires_at timestamptz NOT NULL,
@@ -45,7 +61,7 @@ CREATE TABLE IF NOT EXISTS couples (
   created_at        timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS couple_members (
+CREATE TABLE couple_members (
   id        uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   couple_id uuid NOT NULL REFERENCES couples (id) ON DELETE CASCADE,
   user_id   uuid NOT NULL REFERENCES users   (id) ON DELETE CASCADE,
@@ -54,7 +70,7 @@ CREATE TABLE IF NOT EXISTS couple_members (
   UNIQUE (couple_id, user_id)
 );
 
-CREATE TABLE IF NOT EXISTS messages (
+CREATE TABLE messages (
   id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   couple_id           uuid    NOT NULL REFERENCES couples   (id) ON DELETE CASCADE,
   sender_id           uuid    NOT NULL REFERENCES users     (id),
@@ -76,29 +92,7 @@ ALTER TABLE couples        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE couple_members ENABLE ROW LEVEL SECURITY;
 
 -- =========================================================
--- 3. 기존 정책 전부 제거 (이전 실행 잔재 정리)
--- =========================================================
-
--- users
-DROP POLICY IF EXISTS "Users can read own profile"    ON users;
-DROP POLICY IF EXISTS "Users can insert own profile"   ON users;
-DROP POLICY IF EXISTS "Users can update own profile"   ON users;
-DROP POLICY IF EXISTS "Users can read partner profile"  ON users;
-
--- couples
-DROP POLICY IF EXISTS "Authenticated users can create couples"         ON couples;
-DROP POLICY IF EXISTS "Users can read own couple"                      ON couples;
-DROP POLICY IF EXISTS "Users can update own couple"                    ON couples;
-DROP POLICY IF EXISTS "Anyone can read pending couples by invite code" ON couples;
-
--- couple_members
-DROP POLICY IF EXISTS "Users can insert own membership"       ON couple_members;
-DROP POLICY IF EXISTS "Users can read own membership"         ON couple_members;
-DROP POLICY IF EXISTS "Users can read fellow members"         ON couple_members;
-DROP POLICY IF EXISTS "Users can read own and fellow members" ON couple_members;
-
--- =========================================================
--- 4. FUNCTIONS
+-- 3. FUNCTIONS & TRIGGER
 -- =========================================================
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -115,7 +109,6 @@ BEGIN
 END;
 $$;
 
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
@@ -131,7 +124,7 @@ AS $$
 $$;
 
 -- =========================================================
--- 5. RLS 정책 생성
+-- 4. RLS 정책
 -- =========================================================
 
 -- users
