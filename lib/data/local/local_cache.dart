@@ -29,6 +29,7 @@ class LocalCache {
   static const _keySelectedThemeId = 'selected_theme_id';
   static const _keyCachedMessages = 'cached_messages';
   static const _keyRememberMe = 'remember_me';
+  static const _keyMyDisplayName = 'my_display_name';
 
   late Box<dynamic> _box;
 
@@ -89,6 +90,20 @@ class LocalCache {
   /// Retrieve the cached partner display name, or `null`.
   String? getPartnerName() {
     return _box.get(_keyPartnerName) as String?;
+  }
+
+  // ---------------------------------------------------------------------------
+  // My display name
+  // ---------------------------------------------------------------------------
+
+  /// Persist the current user's display name for widget sender label.
+  Future<void> saveMyDisplayName(String name) async {
+    await _box.put(_keyMyDisplayName, name);
+  }
+
+  /// Retrieve the cached display name, or `null`.
+  String? getMyDisplayName() {
+    return _box.get(_keyMyDisplayName) as String?;
   }
 
   // ---------------------------------------------------------------------------

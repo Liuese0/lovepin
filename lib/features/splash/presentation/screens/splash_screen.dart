@@ -78,6 +78,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         return;
       }
 
+      // Cache own display name for widget sender label.
+      await LocalCache.instance.saveMyDisplayName(
+        profileRows.first['display_name'] as String,
+      );
+
       // Check couple status.
       final coupleRepo = ref.read(coupleRepositoryProvider);
       final couple = await coupleRepo.getMyCouple(user.id);

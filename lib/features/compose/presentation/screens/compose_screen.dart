@@ -100,8 +100,11 @@ class _ComposeScreenState extends ConsumerState<ComposeScreen> {
         imageThumbnailUrl: thumbnailUrl,
       );
 
-      // Update the home screen widget.
-      await WidgetService.updateWidget(message);
+      // Update the home screen widget with sender name.
+      await WidgetService.updateWidget(
+        message,
+        senderName: LocalCache.instance.getMyDisplayName() ?? 'Your Love',
+      );
 
       if (!mounted) return;
 
