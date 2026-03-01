@@ -7,6 +7,7 @@ import 'package:lovepin/core/constants/app_colors.dart';
 import 'package:lovepin/core/constants/app_fonts.dart';
 import 'package:lovepin/core/router/app_router.dart';
 import 'package:lovepin/data/local/local_cache.dart';
+import 'package:lovepin/data/supabase/auth_repository.dart';
 import 'package:lovepin/data/supabase/couple_repository.dart';
 import 'package:lovepin/data/supabase/supabase_client.dart';
 import 'package:lovepin/features/auth/providers/auth_provider.dart';
@@ -45,6 +46,16 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       if (!mounted) return;
 
       if (user == null) {
+        context.goNamed(RouteNames.login);
+        return;
+      }
+
+      // If the user didn't choose "remember me", sign out on restart.
+      if (!LocalCache.instance.getRememberMe()) {
+        final authRepo = ref.read(authRepositoryProvider);
+        await authRepo.signOut();
+        await LocalCache.instance.clear();
+        if (!mounted) return;
         context.goNamed(RouteNames.login);
         return;
       }

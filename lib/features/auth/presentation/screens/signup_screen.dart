@@ -8,6 +8,7 @@ import 'package:lovepin/core/constants/app_colors.dart';
 import 'package:lovepin/core/constants/app_fonts.dart';
 import 'package:lovepin/core/constants/app_sizes.dart';
 import 'package:lovepin/core/router/app_router.dart';
+import 'package:lovepin/data/local/local_cache.dart';
 import 'package:lovepin/features/auth/providers/auth_provider.dart';
 
 /// Email / password sign-up screen.
@@ -44,6 +45,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
+
+      // New signups are remembered by default.
+      await LocalCache.instance.saveRememberMe(true);
 
       if (!mounted) return;
       context.goNamed(RouteNames.profileSetup);

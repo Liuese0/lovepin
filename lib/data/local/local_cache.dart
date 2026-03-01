@@ -27,6 +27,7 @@ class LocalCache {
   static const _keyPartnerId = 'partner_id';
   static const _keySelectedThemeId = 'selected_theme_id';
   static const _keyCachedMessages = 'cached_messages';
+  static const _keyRememberMe = 'remember_me';
 
   late Box<dynamic> _box;
 
@@ -120,6 +121,20 @@ class LocalCache {
     } catch (_) {
       return [];
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Remember me
+  // ---------------------------------------------------------------------------
+
+  /// Persist the "remember me" preference.
+  Future<void> saveRememberMe(bool value) async {
+    await _box.put(_keyRememberMe, value);
+  }
+
+  /// Whether the user chose to be remembered. Defaults to `false`.
+  bool getRememberMe() {
+    return _box.get(_keyRememberMe, defaultValue: false) as bool;
   }
 
   // ---------------------------------------------------------------------------

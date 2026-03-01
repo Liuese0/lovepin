@@ -8,6 +8,7 @@ import 'package:lovepin/core/constants/app_colors.dart';
 import 'package:lovepin/core/constants/app_fonts.dart';
 import 'package:lovepin/core/constants/app_sizes.dart';
 import 'package:lovepin/core/router/app_router.dart';
+import 'package:lovepin/data/local/local_cache.dart';
 import 'package:lovepin/features/auth/providers/auth_provider.dart';
 
 /// Email / password login screen with a pastel card layout.
@@ -24,6 +25,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _loading = false;
   bool _obscurePassword = true;
+  bool _rememberMe = false;
 
   @override
   void dispose() {
@@ -42,6 +44,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
+
+      await LocalCache.instance.saveRememberMe(_rememberMe);
 
       if (!mounted) return;
       context.goNamed(RouteNames.splash);
@@ -140,7 +144,41 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     },
                     onFieldSubmitted: (_) => _signIn(),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 12),
+
+                  // Remember me
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: Checkbox(
+                          value: _rememberMe,
+                          activeColor: AppColors.pinkDark,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          onChanged: (v) {
+                            setState(() => _rememberMe = v ?? false);
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () {
+                          setState(() => _rememberMe = !_rememberMe);
+                        },
+                        child: Text(
+                          '떠올려줘',
+                          style: GoogleFonts.nunito(
+                            fontSize: AppFonts.bodySmall,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
 
                   // Sign in button
                   SizedBox(
