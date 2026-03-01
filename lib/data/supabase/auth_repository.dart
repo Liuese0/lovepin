@@ -30,7 +30,20 @@ class AuthRepository {
         password: password,
       );
       return response;
-    } on AuthException {
+    } on AuthException catch (e) {
+      final normalizedMessage = e.message.toLowerCase();
+      final isUserSaveFailure =
+          normalizedMessage.contains('database error saving new user') ||
+          normalizedMessage.contains('unexpected_failure');
+
+      if (isUserSaveFailure) {
+        throw AuthException(
+          '회원가입 중 사용자 프로필 저장에 실패했습니다. '
+          'Supabase SQL Editor에서 `supabase/full_setup.sql`을 실행해 '
+          '`handle_new_user` 트리거와 `users` 테이블을 복구한 뒤 다시 시도해주세요.',
+        );
+      }
+
       rethrow;
     } catch (e) {
       throw AuthException('Sign-up failed: $e');
