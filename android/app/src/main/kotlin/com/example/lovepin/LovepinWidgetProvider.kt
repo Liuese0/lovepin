@@ -17,7 +17,7 @@ import java.util.TimeZone
  *
  * Reads message data and theme colours from SharedPreferences (written by the
  * Flutter `home_widget` plugin) and renders a layout showing the latest love
- * note with sender name, message text, and timestamp.
+ * note from the partner with sender name, message text, and timestamp.
  */
 class LovepinWidgetProvider : AppWidgetProvider() {
 
@@ -68,12 +68,18 @@ class LovepinWidgetProvider : AppWidgetProvider() {
             } catch (_: Exception) {
             }
 
-            // --- Sender name ---
-            views.setTextViewText(
-                R.id.widget_sender,
-                if (senderName.isNotEmpty()) senderName else "Lovepin"
-            )
+            // --- Sender name (with "From" prefix) ---
+            val displayName = if (senderName.isNotEmpty()) senderName else "Your Love"
+            views.setTextViewText(R.id.widget_sender, "From $displayName")
             trySetTextColor(views, R.id.widget_sender, accentColor)
+
+            // --- Divider colour (accent with transparency) ---
+            try {
+                val accent = Color.parseColor(accentColor)
+                val dividerColor = Color.argb(50, Color.red(accent), Color.green(accent), Color.blue(accent))
+                views.setInt(R.id.widget_divider, "setBackgroundColor", dividerColor)
+            } catch (_: Exception) {
+            }
 
             // --- Message content ---
             views.setTextViewText(

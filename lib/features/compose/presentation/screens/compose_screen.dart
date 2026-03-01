@@ -15,7 +15,6 @@ import 'package:lovepin/data/supabase/message_repository.dart';
 import 'package:lovepin/data/supabase/template_repository.dart';
 import 'package:lovepin/features/auth/providers/auth_provider.dart';
 import 'package:lovepin/features/home/presentation/screens/home_screen.dart';
-import 'package:lovepin/services/widget_service.dart';
 
 /// Provider that loads message templates.
 final templatesProvider =
@@ -98,12 +97,6 @@ class _ComposeScreenState extends ConsumerState<ComposeScreen> {
         content: content.isEmpty ? '❤️' : content,
         imageUrl: imageUrl,
         imageThumbnailUrl: thumbnailUrl,
-      );
-
-      // Update the home screen widget with sender name.
-      await WidgetService.updateWidget(
-        message,
-        senderName: LocalCache.instance.getMyDisplayName() ?? 'Your Love',
       );
 
       if (!mounted) return;

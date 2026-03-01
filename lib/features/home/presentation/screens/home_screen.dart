@@ -24,15 +24,19 @@ FutureProvider.autoDispose<List<MessageModel>>((ref) async {
   // Cache for offline use.
   await LocalCache.instance.saveMessages(messages);
 
-  // Update the home screen widget with the latest message.
+  // Update the home screen widget with the latest *partner* message only.
   if (messages.isNotEmpty) {
-    final latest = messages.first;
     final currentUser = ref.read(currentUserProvider);
-    final isMine = latest.senderId == currentUser?.id;
-    final senderName = isMine
-        ? LocalCache.instance.getMyDisplayName() ?? 'You'
-        : LocalCache.instance.getPartnerName() ?? 'Your Love';
-    await WidgetService.updateWidget(latest, senderName: senderName);
+    final partnerMessage = messages.cast<MessageModel?>().firstWhere(
+      (m) => m!.senderId != currentUser?.id,
+      orElse: () => null,
+    );
+    if (partnerMessage != null) {
+      await WidgetService.updateWidget(
+        partnerMessage,
+        senderName: LocalCache.instance.getPartnerName() ?? 'Your Love',
+      );
+    }
   }
 
   return messages;
