@@ -85,6 +85,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       if (!mounted) return;
 
       if (couple != null && couple.status.value == 'active') {
+        // 로컬 캐시에 커플 정보 저장
+        final partner = await coupleRepo.getPartner(couple.id, user.id);
+        await LocalCache.instance.saveCoupleInfo(
+          coupleId: couple.id,
+          partnerId: partner?.id ?? '',
+        );
+
+        if (!mounted) return;
         ref.read(isCoupleLinkedProvider.notifier).state = true;
         context.goNamed(RouteNames.home);
       } else {
