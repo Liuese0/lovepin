@@ -1,0 +1,5 @@
+# Force LF line endings for all text files
+* text=auto eol=lf
+
+# Ensure Android XML resources always use LF (CRLF breaks resource merger)
+*.xml text eol=lf
