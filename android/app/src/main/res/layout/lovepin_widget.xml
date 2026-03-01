@@ -5,55 +5,51 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="16dp"
-    android:background="#FFD6E0">
+    android:background="#FFD6E0"
+    android:gravity="center_vertical">
 
-    <!-- Sender name / header -->
+    <!-- Sender name / header with heart icon -->
     <TextView
         android:id="@+id/widget_sender"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Lovepin"
-        android:textSize="14sp"
+        android:textSize="13sp"
         android:textStyle="bold"
         android:textColor="#FF8FAB"
         android:maxLines="1"
+        android:drawableStart="@android:drawable/btn_star_big_on"
+        android:drawablePadding="4dp"
         android:ellipsize="end" />
 
-    <!-- Image (hidden by default) -->
-    <ImageView
-        android:id="@+id/widget_image"
+    <View
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"
-        android:scaleType="centerCrop"
-        android:visibility="gone"
-        android:adjustViewBounds="true"
-        android:contentDescription="Love note image" />
+        android:layout_height="8dp" />
 
     <!-- Message content -->
     <TextView
         android:id="@+id/widget_message"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="8dp"
+        android:layout_height="wrap_content"
         android:text="No messages yet"
         android:textSize="16sp"
         android:textColor="#2D2D2D"
         android:maxLines="4"
         android:ellipsize="end"
-        android:gravity="center_vertical" />
+        android:lineSpacingMultiplier="1.2" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="6dp" />
 
     <!-- Timestamp -->
     <TextView
         android:id="@+id/widget_timestamp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
         android:textSize="11sp"
         android:textColor="#FF8FAB"
-        android:maxLines="1" />
+        android:maxLines="1"
+        android:visibility="gone" />
 
 </LinearLayout>

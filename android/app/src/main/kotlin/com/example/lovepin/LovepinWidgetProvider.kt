@@ -1,23 +1,24 @@
 package com.example.lovepin
 
+import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
-import android.content.SharedPreferences
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
+import android.content.Intent
 import android.graphics.Color
+import android.view.View
 import android.widget.RemoteViews
-import es.antonborri.home_widget.HomeWidgetPlugin
-import java.net.URL
-import kotlinx.coroutines.*
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 /**
  * AppWidgetProvider for the Lovepin home screen widget.
  *
  * Reads message data and theme colours from SharedPreferences (written by the
- * Flutter `home_widget` plugin) and renders a RemoteViews layout showing the
- * latest love note — optionally with an image.
+ * Flutter `home_widget` plugin) and renders a layout showing the latest love
+ * note with sender name, message text, and timestamp.
  */
 class LovepinWidgetProvider : AppWidgetProvider() {
 
@@ -31,14 +32,6 @@ class LovepinWidgetProvider : AppWidgetProvider() {
         }
     }
 
-    override fun onEnabled(context: Context) {
-        // First widget placed on home screen.
-    }
-
-    override fun onDisabled(context: Context) {
-        // Last widget removed from home screen.
-    }
-
     companion object {
         private const val PREFS_NAME = "HomeWidgetPreferences"
 
@@ -47,14 +40,11 @@ class LovepinWidgetProvider : AppWidgetProvider() {
             appWidgetManager: AppWidgetManager,
             appWidgetId: Int
         ) {
-            val prefs: SharedPreferences = context.getSharedPreferences(
-                PREFS_NAME, Context.MODE_PRIVATE
-            )
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-            val messageContent = prefs.getString("message_content", "") ?: ""
-            val senderName = prefs.getString("sender_name", "") ?: ""
-            val imagePath = prefs.getString("image_path", "") ?: ""
-            val timestamp = prefs.getString("message_timestamp", "") ?: ""
+            val messageContent = prefs.getString("message_content", null) ?: ""
+            val senderName = prefs.getString("sender_name", null) ?: ""
+            val timestamp = prefs.getString("message_timestamp", null) ?: ""
 
             // Theme colours
             val bgColor = prefs.getString("theme_background_color", "#FFD6E0") ?: "#FFD6E0"
@@ -63,75 +53,76 @@ class LovepinWidgetProvider : AppWidgetProvider() {
 
             val views = RemoteViews(context.packageName, R.layout.lovepin_widget)
 
-            // Background tint
+            // --- Click to open app ---
+            val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+            if (launchIntent != null) {
+                val pendingIntent = PendingIntent.getActivity(
+                    context, 0, launchIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.widget_container, pendingIntent)
+            }
+
+            // --- Background colour ---
             try {
                 views.setInt(R.id.widget_container, "setBackgroundColor", Color.parseColor(bgColor))
-            } catch (_: Exception) {}
-
-            // Sender name
-            if (senderName.isNotEmpty()) {
-                views.setTextViewText(R.id.widget_sender, senderName)
-                try {
-                    views.setTextColor(R.id.widget_sender, Color.parseColor(accentColor))
-                } catch (_: Exception) {}
-            } else {
-                views.setTextViewText(R.id.widget_sender, "Lovepin")
+            } catch (_: Exception) {
             }
 
-            // Message content
-            if (messageContent.isNotEmpty()) {
-                views.setTextViewText(R.id.widget_message, messageContent)
-            } else {
-                views.setTextViewText(R.id.widget_message, "No messages yet")
-            }
-            try {
-                views.setTextColor(R.id.widget_message, Color.parseColor(textColor))
-            } catch (_: Exception) {}
+            // --- Sender name ---
+            views.setTextViewText(
+                R.id.widget_sender,
+                if (senderName.isNotEmpty()) senderName else "Lovepin"
+            )
+            trySetTextColor(views, R.id.widget_sender, accentColor)
 
-            // Timestamp
+            // --- Message content ---
+            views.setTextViewText(
+                R.id.widget_message,
+                if (messageContent.isNotEmpty()) messageContent else "No messages yet"
+            )
+            trySetTextColor(views, R.id.widget_message, textColor)
+
+            // --- Timestamp ---
             if (timestamp.isNotEmpty()) {
                 views.setTextViewText(R.id.widget_timestamp, formatTimestamp(timestamp))
-                try {
-                    views.setTextColor(R.id.widget_timestamp, Color.parseColor(accentColor))
-                } catch (_: Exception) {}
+                views.setViewVisibility(R.id.widget_timestamp, View.VISIBLE)
+                trySetTextColor(views, R.id.widget_timestamp, accentColor)
             } else {
-                views.setTextViewText(R.id.widget_timestamp, "")
-            }
-
-            // Image — load asynchronously if available
-            if (imagePath.isNotEmpty()) {
-                views.setViewVisibility(R.id.widget_image, android.view.View.VISIBLE)
-                // Load image in background
-                CoroutineScope(Dispatchers.IO).launch {
-                    try {
-                        val url = URL(imagePath)
-                        val bitmap: Bitmap = BitmapFactory.decodeStream(url.openStream())
-                        views.setImageViewBitmap(R.id.widget_image, bitmap)
-                        appWidgetManager.updateAppWidget(appWidgetId, views)
-                    } catch (_: Exception) {
-                        views.setViewVisibility(R.id.widget_image, android.view.View.GONE)
-                        appWidgetManager.updateAppWidget(appWidgetId, views)
-                    }
-                }
-            } else {
-                views.setViewVisibility(R.id.widget_image, android.view.View.GONE)
+                views.setViewVisibility(R.id.widget_timestamp, View.GONE)
             }
 
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
 
+        private fun trySetTextColor(views: RemoteViews, viewId: Int, hexColor: String) {
+            try {
+                views.setTextColor(viewId, Color.parseColor(hexColor))
+            } catch (_: Exception) {
+            }
+        }
+
+        /**
+         * Parse an ISO-8601 timestamp and return a human-friendly relative string.
+         * Uses SimpleDateFormat for compatibility with API 21+.
+         */
         private fun formatTimestamp(isoTimestamp: String): String {
             return try {
-                val instant = java.time.Instant.parse(isoTimestamp)
-                val local = instant.atZone(java.time.ZoneId.systemDefault())
-                val now = java.time.ZonedDateTime.now()
-                val diff = java.time.Duration.between(local, now)
+                val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
+                format.timeZone = TimeZone.getTimeZone("UTC")
+                // Strip fractional seconds and timezone suffix for parsing
+                val cleaned = isoTimestamp
+                    .replace(Regex("\\.[0-9]+"), "")
+                    .replace("Z", "")
+                val date = format.parse(cleaned) ?: return ""
+                val diffMs = Date().time - date.time
+                val diffMin = diffMs / 60_000
 
                 when {
-                    diff.toMinutes() < 1 -> "just now"
-                    diff.toMinutes() < 60 -> "${diff.toMinutes()}m ago"
-                    diff.toHours() < 24 -> "${diff.toHours()}h ago"
-                    else -> "${diff.toDays()}d ago"
+                    diffMin < 1 -> "just now"
+                    diffMin < 60 -> "${diffMin}m ago"
+                    diffMin < 1440 -> "${diffMin / 60}h ago"
+                    else -> "${diffMin / 1440}d ago"
                 }
             } catch (_: Exception) {
                 ""
