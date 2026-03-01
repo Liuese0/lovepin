@@ -74,6 +74,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         return;
       }
 
+      // Cache own display name for widget sender label.
+      await LocalCache.instance.saveMyDisplayName(
+        profileRows.first['display_name'] as String,
+      );
+
       // Check couple status.
       final coupleRepo = ref.read(coupleRepositoryProvider);
       final couple = await coupleRepo.getMyCouple(user.id);
@@ -81,6 +86,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (!mounted) return;
 
       if (couple != null && couple.status.value == 'active') {
+        // 로컬 캐시에 커플 정보 저장
+        final partner = await coupleRepo.getPartner(couple.id, user.id);
+        await LocalCache.instance.saveCoupleInfo(
+          coupleId: couple.id,
+          partnerId: partner?.id ?? '',
+          partnerName: partner?.displayName ?? '',
+        );
+
+        if (!mounted) return;
         ref.read(isCoupleLinkedProvider.notifier).state = true;
         context.goNamed(RouteNames.home);
       } else {

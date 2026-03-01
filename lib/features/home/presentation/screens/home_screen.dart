@@ -10,10 +10,11 @@ import 'package:lovepin/data/local/local_cache.dart';
 import 'package:lovepin/data/models/message_model.dart';
 import 'package:lovepin/data/supabase/message_repository.dart';
 import 'package:lovepin/features/auth/providers/auth_provider.dart';
+import 'package:lovepin/services/widget_service.dart';
 
 /// Riverpod provider that fetches the message feed for the current couple.
 final messageFeedProvider =
-    FutureProvider.autoDispose<List<MessageModel>>((ref) async {
+FutureProvider.autoDispose<List<MessageModel>>((ref) async {
   final coupleId = LocalCache.instance.getCoupleId();
   if (coupleId == null || coupleId.isEmpty) return [];
 
@@ -22,6 +23,17 @@ final messageFeedProvider =
 
   // Cache for offline use.
   await LocalCache.instance.saveMessages(messages);
+
+  // Update the home screen widget with the latest message.
+  if (messages.isNotEmpty) {
+    final latest = messages.first;
+    final currentUser = ref.read(currentUserProvider);
+    final isMine = latest.senderId == currentUser?.id;
+    final senderName = isMine
+        ? LocalCache.instance.getMyDisplayName() ?? 'You'
+        : LocalCache.instance.getPartnerName() ?? 'Your Love';
+    await WidgetService.updateWidget(latest, senderName: senderName);
+  }
 
   return messages;
 });
@@ -37,13 +49,26 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Lovepin',
-          style: GoogleFonts.caveat(
-            fontSize: AppFonts.h1,
-            fontWeight: AppFonts.bold,
-            color: AppColors.pinkDark,
-          ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Lovepin',
+              style: GoogleFonts.caveat(
+                fontSize: AppFonts.h1,
+                fontWeight: AppFonts.bold,
+                color: AppColors.pinkDark,
+              ),
+            ),
+            if (LocalCache.instance.getPartnerName()?.isNotEmpty == true)
+              Text(
+                'with ${LocalCache.instance.getPartnerName()}',
+                style: GoogleFonts.nunito(
+                  fontSize: AppFonts.caption,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+          ],
         ),
         actions: [
           IconButton(

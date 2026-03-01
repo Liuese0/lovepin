@@ -19,7 +19,7 @@ import 'package:lovepin/services/widget_service.dart';
 
 /// Provider that loads message templates.
 final templatesProvider =
-    FutureProvider.autoDispose<List<TemplateModel>>((ref) async {
+FutureProvider.autoDispose<List<TemplateModel>>((ref) async {
   final repo = TemplateRepository();
   return repo.getTemplates(isPremium: false);
 });
@@ -100,8 +100,11 @@ class _ComposeScreenState extends ConsumerState<ComposeScreen> {
         imageThumbnailUrl: thumbnailUrl,
       );
 
-      // Update the home screen widget.
-      await WidgetService.updateWidget(message);
+      // Update the home screen widget with sender name.
+      await WidgetService.updateWidget(
+        message,
+        senderName: LocalCache.instance.getMyDisplayName() ?? 'Your Love',
+      );
 
       if (!mounted) return;
 
@@ -223,13 +226,13 @@ class _ComposeScreenState extends ConsumerState<ComposeScreen> {
                   onPressed: _sending ? null : _send,
                   icon: _sending
                       ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.white,
-                          ),
-                        )
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.white,
+                    ),
+                  )
                       : const Icon(Icons.send),
                   label: const Text('Send'),
                 ),
@@ -269,8 +272,8 @@ class _ComposeScreenState extends ConsumerState<ComposeScreen> {
               data: (templates) {
                 final filtered = _selectedCategory != null
                     ? templates
-                        .where((t) => t.category == _selectedCategory)
-                        .toList()
+                    .where((t) => t.category == _selectedCategory)
+                    .toList()
                     : templates;
 
                 if (filtered.isEmpty) {
@@ -311,7 +314,7 @@ class _ComposeScreenState extends ConsumerState<ComposeScreen> {
                 child: Padding(
                   padding: EdgeInsets.all(AppSizes.paddingLg),
                   child:
-                      CircularProgressIndicator(color: AppColors.pinkDark),
+                  CircularProgressIndicator(color: AppColors.pinkDark),
                 ),
               ),
               error: (_, __) => const SizedBox.shrink(),

@@ -12,7 +12,7 @@ import 'package:lovepin/data/supabase/theme_repository.dart';
 
 /// Provider that fetches available widget themes.
 final widgetThemesProvider =
-    FutureProvider.autoDispose<List<WidgetThemeModel>>((ref) async {
+FutureProvider.autoDispose<List<WidgetThemeModel>>((ref) async {
   final repo = ThemeRepository();
   return repo.getThemes();
 });
@@ -43,7 +43,13 @@ class WidgetThemeScreen extends ConsumerWidget {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.goNamed('settings');
+            }
+          },
         ),
       ),
       body: themesAsync.when(

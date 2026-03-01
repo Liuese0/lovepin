@@ -31,8 +31,26 @@ class CoupleRepository {
     final random = Random.secure();
     return List.generate(
       _codeLength,
-      (_) => _codeChars[random.nextInt(_codeChars.length)],
+          (_) => _codeChars[random.nextInt(_codeChars.length)],
     ).join();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
+  /// Ensure the user has a row in `public.users`.
+  ///
+  /// The `on_auth_user_created` trigger normally handles this, but it may not
+  /// have fired (e.g. trigger missing on the instance, race-condition, etc.).
+  /// An upsert with `ON CONFLICT DO NOTHING` is cheap and guarantees the FK
+  /// target exists before we insert into `couple_members`.
+  Future<void> _ensureUserExists(String userId) async {
+    await _client.database('users').upsert(
+      {'id': userId, 'created_at': DateTime.now().toUtc().toIso8601String()},
+      onConflict: 'id',
+      ignoreDuplicates: true,
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -47,6 +65,9 @@ class CoupleRepository {
   /// Returns the newly created [CoupleModel].
   Future<CoupleModel> createCouple(String userId) async {
     try {
+      // Guarantee the user row exists before referencing it.
+      await _ensureUserExists(userId);
+
       const uuid = Uuid();
       final coupleId = uuid.v4();
       final inviteCode = generateInviteCode();
@@ -117,6 +138,9 @@ class CoupleRepository {
         throw Exception('Invite code has expired.');
       }
 
+      // Guarantee the user row exists before referencing it.
+      await _ensureUserExists(userId);
+
       // Ensure the joiner is not the same user who created the couple.
       final existingMembers = await _client
           .database('couple_members')
@@ -144,9 +168,9 @@ class CoupleRepository {
       final updatedData = await _client
           .database('couples')
           .update({
-            'status': CoupleStatus.active.value,
-            'linked_at': now.toIso8601String(),
-          })
+        'status': CoupleStatus.active.value,
+        'linked_at': now.toIso8601String(),
+      })
           .eq('id', couple.id)
           .select()
           .single();

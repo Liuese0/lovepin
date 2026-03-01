@@ -24,7 +24,7 @@ class UserModel {
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id'] as String,
-      displayName: json['display_name'] as String,
+      displayName: (json['display_name'] as String?) ?? '',
       avatarUrl: json['avatar_url'] as String?,
       selectedThemeId: json['selected_theme_id'] as String?,
       fcmToken: json['fcm_token'] as String?,
@@ -71,24 +71,24 @@ class UserModel {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is UserModel &&
-          runtimeType == other.runtimeType &&
-          id == other.id &&
-          displayName == other.displayName &&
-          avatarUrl == other.avatarUrl &&
-          selectedThemeId == other.selectedThemeId &&
-          fcmToken == other.fcmToken &&
-          createdAt == other.createdAt;
+          other is UserModel &&
+              runtimeType == other.runtimeType &&
+              id == other.id &&
+              displayName == other.displayName &&
+              avatarUrl == other.avatarUrl &&
+              selectedThemeId == other.selectedThemeId &&
+              fcmToken == other.fcmToken &&
+              createdAt == other.createdAt;
 
   @override
   int get hashCode => Object.hash(
-        id,
-        displayName,
-        avatarUrl,
-        selectedThemeId,
-        fcmToken,
-        createdAt,
-      );
+    id,
+    displayName,
+    avatarUrl,
+    selectedThemeId,
+    fcmToken,
+    createdAt,
+  );
 
   @override
   String toString() {
