@@ -9,6 +9,8 @@ import 'package:lovepin/core/constants/app_fonts.dart';
 import 'package:lovepin/core/constants/app_sizes.dart';
 import 'package:lovepin/core/router/app_router.dart';
 import 'package:lovepin/data/local/local_cache.dart';
+import 'package:lovepin/data/supabase/couple_repository.dart';
+import 'package:lovepin/data/supabase/supabase_client.dart';
 import 'package:lovepin/features/auth/providers/auth_provider.dart';
 
 /// Email / password login screen with a pastel card layout.
@@ -48,7 +50,42 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       await LocalCache.instance.saveRememberMe(_rememberMe);
 
       if (!mounted) return;
-      context.goNamed(RouteNames.splash);
+
+      // Route directly instead of going through splash (which would
+      // sign out non-remembered users immediately).
+      final user = ref.read(currentUserProvider);
+      if (user == null) throw Exception('Not authenticated');
+
+      // Check profile completion.
+      final db = SupabaseClientWrapper.instance;
+      final profileRows = await db
+          .database('users')
+          .select('display_name')
+          .eq('id', user.id);
+
+      if (!mounted) return;
+
+      final hasProfile = profileRows.isNotEmpty &&
+          profileRows.first['display_name'] != null &&
+          (profileRows.first['display_name'] as String).isNotEmpty;
+
+      if (!hasProfile) {
+        context.goNamed(RouteNames.profileSetup);
+        return;
+      }
+
+      // Check couple status.
+      final coupleRepo = ref.read(coupleRepositoryProvider);
+      final couple = await coupleRepo.getMyCouple(user.id);
+
+      if (!mounted) return;
+
+      if (couple != null && couple.status.value == 'active') {
+        ref.read(isCoupleLinkedProvider.notifier).state = true;
+        context.goNamed(RouteNames.home);
+      } else {
+        context.goNamed(RouteNames.coupleLink);
+      }
     } on AuthException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -169,7 +206,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           setState(() => _rememberMe = !_rememberMe);
                         },
                         child: Text(
-                          '떠올려줘',
+                          'Remember me',
                           style: GoogleFonts.nunito(
                             fontSize: AppFonts.bodySmall,
                             color: AppColors.textSecondary,
