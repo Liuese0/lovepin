@@ -90,6 +90,7 @@ CREATE TABLE messages (
 ALTER TABLE users          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE couples        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE couple_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE messages       ENABLE ROW LEVEL SECURITY;
 
 -- =========================================================
 -- 3. FUNCTIONS & TRIGGER
@@ -173,4 +174,20 @@ CREATE POLICY "Users can insert own membership"
 
 CREATE POLICY "Users can read own and fellow members"
   ON couple_members FOR SELECT TO authenticated
+  USING (couple_id IN (SELECT get_my_couple_ids()));
+
+-- messages
+CREATE POLICY "Users can insert messages to own couple"
+  ON messages FOR INSERT TO authenticated
+  WITH CHECK (
+    sender_id = auth.uid()
+    AND couple_id IN (SELECT get_my_couple_ids())
+  );
+
+CREATE POLICY "Users can read messages from own couple"
+  ON messages FOR SELECT TO authenticated
+  USING (couple_id IN (SELECT get_my_couple_ids()));
+
+CREATE POLICY "Users can update messages in own couple"
+  ON messages FOR UPDATE TO authenticated
   USING (couple_id IN (SELECT get_my_couple_ids()));
