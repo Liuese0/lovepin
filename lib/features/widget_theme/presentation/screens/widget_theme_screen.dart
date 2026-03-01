@@ -43,7 +43,13 @@ class WidgetThemeScreen extends ConsumerWidget {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.goNamed('settings');
+            }
+          },
         ),
       ),
       body: themesAsync.when(

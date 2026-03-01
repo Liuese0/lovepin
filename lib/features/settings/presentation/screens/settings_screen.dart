@@ -124,7 +124,7 @@ class SettingsScreen extends ConsumerWidget {
               title: const Text('Widget Theme'),
               subtitle: const Text('Customise your widget appearance'),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.goNamed(RouteNames.widgetTheme),
+              onTap: () => context.pushNamed(RouteNames.widgetTheme),
             ),
           ),
 
