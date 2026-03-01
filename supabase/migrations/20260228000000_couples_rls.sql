@@ -3,7 +3,6 @@
 -- SECURITY DEFINER bypasses RLS so it won't trigger infinite recursion
 -- when used inside couple_members policies.
 -- =============================================================================
-DROP FUNCTION IF EXISTS get_my_couple_ids();
 CREATE OR REPLACE FUNCTION get_my_couple_ids()
 RETURNS SETOF uuid
 LANGUAGE sql

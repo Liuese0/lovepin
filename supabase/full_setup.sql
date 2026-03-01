@@ -94,7 +94,6 @@ CREATE TRIGGER on_auth_user_created
 -- 3. HELPER FUNCTION
 -- =========================================================
 
-DROP FUNCTION IF EXISTS get_my_couple_ids();
 CREATE OR REPLACE FUNCTION get_my_couple_ids()
 RETURNS SETOF uuid
 LANGUAGE sql
