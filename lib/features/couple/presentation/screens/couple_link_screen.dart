@@ -254,7 +254,7 @@ class _CoupleLinkScreenState extends ConsumerState<CoupleLinkScreen> {
                     context.goNamed(RouteNames.login);
                   },
                   child: Text(
-                    '로그아웃',
+                    "We'll meet again.",
                     style: GoogleFonts.nunito(
                       fontSize: AppFonts.caption,
                       color: AppColors.textSecondary.withValues(alpha: 0.6),
