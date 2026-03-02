@@ -174,3 +174,69 @@ CREATE POLICY "Users can insert own membership"
 CREATE POLICY "Users can read own and fellow members"
   ON couple_members FOR SELECT TO authenticated
   USING (couple_id IN (SELECT get_my_couple_ids()));
+
+-- messages
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Couple members can read messages"
+  ON messages FOR SELECT TO authenticated
+  USING (couple_id IN (SELECT get_my_couple_ids()));
+
+CREATE POLICY "Couple members can insert messages"
+  ON messages FOR INSERT TO authenticated
+  WITH CHECK (
+    sender_id = auth.uid()
+    AND couple_id IN (SELECT get_my_couple_ids())
+  );
+
+CREATE POLICY "Couple members can update messages"
+  ON messages FOR UPDATE TO authenticated
+  USING (couple_id IN (SELECT get_my_couple_ids()));
+
+-- =========================================================
+-- 5. STORAGE BUCKETS & POLICIES
+-- =========================================================
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES
+  ('message_images', 'message_images', true),
+  ('message_thumbnails', 'message_thumbnails', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Allow couple members to upload images to their couple's folder.
+CREATE POLICY "Couple members can upload images"
+  ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (
+    bucket_id = 'message_images'
+    AND (storage.foldername(name))[1] IN (
+      SELECT couple_id::text FROM couple_members WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Couple members can upload thumbnails"
+  ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (
+    bucket_id = 'message_thumbnails'
+    AND (storage.foldername(name))[1] IN (
+      SELECT couple_id::text FROM couple_members WHERE user_id = auth.uid()
+    )
+  );
+
+-- Public read access for images (widget and app need to fetch them).
+CREATE POLICY "Public read access for message images"
+  ON storage.objects FOR SELECT TO public
+  USING (bucket_id IN ('message_images', 'message_thumbnails'));
+
+-- =========================================================
+-- 6. REALTIME
+-- =========================================================
+
+ALTER TABLE messages REPLICA IDENTITY FULL;
+
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE messages;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END;
+$$;
