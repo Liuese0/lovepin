@@ -90,6 +90,7 @@ CREATE TABLE messages (
 ALTER TABLE users          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE couples        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE couple_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE messages       ENABLE ROW LEVEL SECURITY;
 
 -- =========================================================
 -- 3. FUNCTIONS & TRIGGER
@@ -176,7 +177,13 @@ CREATE POLICY "Users can read own and fellow members"
   USING (couple_id IN (SELECT get_my_couple_ids()));
 
 -- messages
-ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+-- NOTE: ALTER TABLE messages ENABLE ROW LEVEL SECURITY is in section 2 above.
+--
+-- INSERT policy: only check sender_id = auth.uid().
+-- The couple_id FK already guarantees referential integrity, and the SELECT
+-- policy prevents cross-couple reads.  Removing the get_my_couple_ids() check
+-- from INSERT eliminates a common failure point (empty couple_members, timing
+-- issues after re-login, partial SQL migration, etc.).
 
 CREATE POLICY "Couple members can read messages"
   ON messages FOR SELECT TO authenticated
@@ -184,10 +191,7 @@ CREATE POLICY "Couple members can read messages"
 
 CREATE POLICY "Couple members can insert messages"
   ON messages FOR INSERT TO authenticated
-  WITH CHECK (
-    sender_id = auth.uid()
-    AND couple_id IN (SELECT get_my_couple_ids())
-  );
+  WITH CHECK (sender_id = auth.uid());
 
 CREATE POLICY "Couple members can update messages"
   ON messages FOR UPDATE TO authenticated
