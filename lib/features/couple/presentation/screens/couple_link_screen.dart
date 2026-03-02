@@ -10,6 +10,7 @@ import 'package:lovepin/core/constants/app_sizes.dart';
 import 'package:lovepin/core/router/app_router.dart';
 import 'package:lovepin/data/local/local_cache.dart';
 import 'package:lovepin/data/supabase/auth_repository.dart';
+import 'package:lovepin/data/supabase/couple_repository.dart';
 import 'package:lovepin/features/auth/providers/auth_provider.dart';
 
 /// Screen where users create an invite code or join an existing couple.
@@ -24,11 +25,52 @@ class _CoupleLinkScreenState extends ConsumerState<CoupleLinkScreen> {
   final _codeController = TextEditingController();
   String? _generatedCode;
   bool _loading = false;
+  bool _checkingExisting = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkExistingCouple();
+  }
 
   @override
   void dispose() {
     _codeController.dispose();
     super.dispose();
+  }
+
+  /// Check Supabase for an existing active couple. If found, restore
+  /// the cached couple info and navigate straight to home so the user
+  /// doesn't have to re-link after logging out and back in.
+  Future<void> _checkExistingCouple() async {
+    try {
+      final user = ref.read(currentUserProvider);
+      if (user == null) {
+        if (mounted) setState(() => _checkingExisting = false);
+        return;
+      }
+
+      final coupleRepo = ref.read(coupleRepositoryProvider);
+      final couple = await coupleRepo.getMyCouple(user.id);
+
+      if (couple != null && couple.status.value == 'active') {
+        final partner = await coupleRepo.getPartner(couple.id, user.id);
+        await LocalCache.instance.saveCoupleInfo(
+          coupleId: couple.id,
+          partnerId: partner?.id ?? '',
+          partnerName: partner?.displayName ?? '',
+        );
+
+        if (!mounted) return;
+        ref.read(isCoupleLinkedProvider.notifier).state = true;
+        context.goNamed(RouteNames.home);
+        return;
+      }
+    } catch (_) {
+      // Network error — fall through to the manual link UI.
+    }
+
+    if (mounted) setState(() => _checkingExisting = false);
   }
 
   Future<void> _createCouple() async {
@@ -94,6 +136,17 @@ class _CoupleLinkScreenState extends ConsumerState<CoupleLinkScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_checkingExisting) {
+      return Scaffold(
+        body: Container(
+          decoration: const BoxDecoration(gradient: AppColors.pinkGradient),
+          child: const Center(
+            child: CircularProgressIndicator(color: AppColors.pinkDark),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       body: SafeArea(
         child: Center(
