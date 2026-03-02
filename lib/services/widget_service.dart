@@ -36,6 +36,7 @@ class WidgetService {
   static const String _keyBackgroundColor = 'theme_background_color';
   static const String _keyTextColor = 'theme_text_color';
   static const String _keyAccentColor = 'theme_accent_color';
+  static const String _keyUserId = 'widget_user_id';
 
   // ---------------------------------------------------------------------------
   // Default theme colours (Rose Petal)
@@ -85,10 +86,11 @@ class WidgetService {
     MessageModel message, {
     WidgetThemeModel? theme,
     String? senderName,
+    String? userId,
   }) async {
     try {
       // -----------------------------------------------------------------------
-      // 1. Save message data
+      // 1. Save message data + owner
       // -----------------------------------------------------------------------
       await Future.wait([
         HomeWidget.saveWidgetData<String>(
@@ -107,6 +109,8 @@ class WidgetService {
           _keyTimestamp,
           message.createdAt.toIso8601String(),
         ),
+        if (userId != null)
+          HomeWidget.saveWidgetData<String>(_keyUserId, userId),
       ]);
 
       // -----------------------------------------------------------------------
@@ -149,6 +153,7 @@ class WidgetService {
         HomeWidget.saveWidgetData<String>(_keySenderName, ''),
         HomeWidget.saveWidgetData<String>(_keyImagePath, ''),
         HomeWidget.saveWidgetData<String>(_keyTimestamp, ''),
+        HomeWidget.saveWidgetData<String>(_keyUserId, ''),
         HomeWidget.saveWidgetData<String>(
           _keyBackgroundColor,
           _defaultBackgroundColor,
@@ -212,6 +217,24 @@ class WidgetService {
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
+
+  /// Clear the widget if the stored owner does not match [currentUserId].
+  ///
+  /// Prevents stale data from a different account being displayed when the
+  /// user switches accounts on the same device.
+  static Future<void> clearIfOwnerChanged(String currentUserId) async {
+    try {
+      final storedUserId = await HomeWidget.getWidgetData<String>(_keyUserId);
+      if (storedUserId != null &&
+          storedUserId.isNotEmpty &&
+          storedUserId != currentUserId) {
+        debugPrint('[WidgetService] Owner changed, clearing widget.');
+        await clearWidget();
+      }
+    } catch (e) {
+      debugPrint('[WidgetService] Failed to validate owner: $e');
+    }
+  }
 
   /// Returns `true` when the widget data keys contain a non-empty message.
   ///

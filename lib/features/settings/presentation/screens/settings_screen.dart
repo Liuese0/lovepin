@@ -10,6 +10,7 @@ import 'package:lovepin/core/router/app_router.dart';
 import 'package:lovepin/data/local/local_cache.dart';
 import 'package:lovepin/data/supabase/couple_repository.dart';
 import 'package:lovepin/features/auth/providers/auth_provider.dart';
+import 'package:lovepin/services/realtime_message_service.dart';
 import 'package:lovepin/services/widget_service.dart';
 
 /// Provider that loads current couple info for the settings screen.
@@ -65,6 +66,7 @@ class SettingsScreen extends ConsumerWidget {
     if (confirmed != true) return;
 
     try {
+      RealtimeMessageService.instance.stop();
       final repo = ref.read(authRepositoryProvider);
       await repo.signOut();
       await LocalCache.instance.clear();
@@ -214,6 +216,7 @@ class _CoupleCard extends ConsumerWidget {
         final coupleRepo = ref.read(coupleRepositoryProvider);
         await coupleRepo.unlinkCouple(coupleId);
       }
+      RealtimeMessageService.instance.stop();
       await LocalCache.instance.clear();
       await WidgetService.clearWidget();
 

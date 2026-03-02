@@ -10,6 +10,7 @@ import 'package:lovepin/data/local/local_cache.dart';
 import 'package:lovepin/data/models/message_model.dart';
 import 'package:lovepin/data/supabase/message_repository.dart';
 import 'package:lovepin/features/auth/providers/auth_provider.dart';
+import 'package:lovepin/services/realtime_message_service.dart';
 import 'package:lovepin/services/widget_service.dart';
 
 /// Riverpod provider that fetches the message feed for the current couple.
@@ -24,19 +25,34 @@ FutureProvider.autoDispose<List<MessageModel>>((ref) async {
   // Cache for offline use.
   await LocalCache.instance.saveMessages(messages);
 
+  final currentUser = ref.read(currentUserProvider);
+  final partnerName = LocalCache.instance.getPartnerName() ?? 'Your Love';
+
+  // Clear widget if a different account is now signed in.
+  if (currentUser != null) {
+    await WidgetService.clearIfOwnerChanged(currentUser.id);
+  }
+
   // Update the home screen widget with the latest *partner* message only.
-  if (messages.isNotEmpty) {
-    final currentUser = ref.read(currentUserProvider);
+  if (messages.isNotEmpty && currentUser != null) {
     final partnerMessage = messages.cast<MessageModel?>().firstWhere(
-      (m) => m!.senderId != currentUser?.id,
+      (m) => m!.senderId != currentUser.id,
       orElse: () => null,
     );
     if (partnerMessage != null) {
       await WidgetService.updateWidget(
         partnerMessage,
-        senderName: LocalCache.instance.getPartnerName() ?? 'Your Love',
+        senderName: partnerName,
+        userId: currentUser.id,
       );
     }
+
+    // Start realtime subscription so the widget auto-updates on new messages.
+    RealtimeMessageService.instance.start(
+      coupleId: coupleId,
+      currentUserId: currentUser.id,
+      partnerName: partnerName,
+    );
   }
 
   return messages;

@@ -8,6 +8,7 @@ import 'package:firebase_core/firebase_core.dart';
 
 import 'app.dart';
 import 'data/local/local_cache.dart';
+import 'services/widget_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,6 +41,9 @@ Future<void> main() async {
     url: dotenv.env['SUPABASE_URL']!,
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
+
+  // Initialise the home-screen widget service.
+  await WidgetService.initializeWidget();
 
   // Initialise Firebase (required for FCM push notifications — F-11).
   // Wrapped in try-catch so the app still launches without google-services.json.
