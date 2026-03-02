@@ -197,32 +197,25 @@ CREATE POLICY "Couple members can update messages"
 -- 5. STORAGE BUCKETS & POLICIES
 -- =========================================================
 
+-- 5-a. 버킷 생성
 INSERT INTO storage.buckets (id, name, public)
 VALUES
   ('message_images', 'message_images', true),
   ('message_thumbnails', 'message_thumbnails', true)
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET public = true;
 
--- Allow couple members to upload images to their couple's folder.
-CREATE POLICY "Couple members can upload images"
+-- 5-b. 기존 정책 제거 (충돌 방지)
+DROP POLICY IF EXISTS "Couple members can upload images"      ON storage.objects;
+DROP POLICY IF EXISTS "Couple members can upload thumbnails"  ON storage.objects;
+DROP POLICY IF EXISTS "Public read access for message images" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users can upload images" ON storage.objects;
+
+-- 5-c. 인증된 사용자가 lovepin 버킷에 업로드 허용
+CREATE POLICY "Authenticated users can upload images"
   ON storage.objects FOR INSERT TO authenticated
-  WITH CHECK (
-    bucket_id = 'message_images'
-    AND (storage.foldername(name))[1] IN (
-      SELECT couple_id::text FROM couple_members WHERE user_id = auth.uid()
-    )
-  );
+  WITH CHECK (bucket_id IN ('message_images', 'message_thumbnails'));
 
-CREATE POLICY "Couple members can upload thumbnails"
-  ON storage.objects FOR INSERT TO authenticated
-  WITH CHECK (
-    bucket_id = 'message_thumbnails'
-    AND (storage.foldername(name))[1] IN (
-      SELECT couple_id::text FROM couple_members WHERE user_id = auth.uid()
-    )
-  );
-
--- Public read access for images (widget and app need to fetch them).
+-- 5-d. 이미지 공개 읽기 (위젯/앱에서 접근)
 CREATE POLICY "Public read access for message images"
   ON storage.objects FOR SELECT TO public
   USING (bucket_id IN ('message_images', 'message_thumbnails'));
