@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../data/models/message_model.dart';
 import '../data/models/theme_model.dart';
@@ -90,7 +91,17 @@ class WidgetService {
   }) async {
     try {
       // -----------------------------------------------------------------------
-      // 1. Save message data + owner
+      // 1. Download image locally (if present) so the native widget can
+      //    render it as a Bitmap without network access.
+      // -----------------------------------------------------------------------
+      final imageUrl = message.imageThumbnailUrl ?? message.imageUrl;
+      String localImagePath = '';
+      if (imageUrl != null && imageUrl.isNotEmpty) {
+        localImagePath = await _downloadWidgetImage(imageUrl) ?? '';
+      }
+
+      // -----------------------------------------------------------------------
+      // 2. Save message data + owner
       // -----------------------------------------------------------------------
       await Future.wait([
         HomeWidget.saveWidgetData<String>(
@@ -103,7 +114,7 @@ class WidgetService {
         ),
         HomeWidget.saveWidgetData<String>(
           _keyImagePath,
-          message.imageThumbnailUrl ?? message.imageUrl ?? '',
+          localImagePath,
         ),
         HomeWidget.saveWidgetData<String>(
           _keyTimestamp,
@@ -217,6 +228,31 @@ class WidgetService {
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
+
+  /// Download an image from [url] and save it as `widget_image.jpg` in the
+  /// app's temporary directory.  Returns the absolute file path on success,
+  /// or `null` on failure.
+  static Future<String?> _downloadWidgetImage(String url) async {
+    try {
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/widget_image.jpg');
+
+      final client = HttpClient();
+      final request = await client.getUrl(Uri.parse(url));
+      final response = await request.close();
+
+      if (response.statusCode == 200) {
+        final bytes = await consolidateHttpClientResponseBytes(response);
+        await file.writeAsBytes(bytes);
+        client.close();
+        return file.path;
+      }
+      client.close();
+    } catch (e) {
+      debugPrint('[WidgetService] Image download failed: $e');
+    }
+    return null;
+  }
 
   /// Clear the widget if the stored owner does not match [currentUserId].
   ///

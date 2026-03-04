@@ -4,9 +4,11 @@ import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.view.View
 import android.widget.RemoteViews
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -83,15 +85,39 @@ class LovepinWidgetProvider : AppWidgetProvider() {
             } catch (_: Exception) {
             }
 
-            // --- Message content (with photo indicator) ---
-            val hasImage = imagePath.isNotEmpty()
-            val displayContent = when {
-                messageContent.isNotEmpty() && hasImage -> "\uD83D\uDCF7 $messageContent"
-                hasImage -> "\uD83D\uDCF7 Photo"
-                messageContent.isNotEmpty() -> messageContent
-                else -> "No messages yet"
+            // --- Message photo ---
+            if (imagePath.isNotEmpty()) {
+                try {
+                    val file = File(imagePath)
+                    if (file.exists()) {
+                        val bitmap = BitmapFactory.decodeFile(file.absolutePath)
+                        if (bitmap != null) {
+                            views.setImageViewBitmap(R.id.widget_image, bitmap)
+                            views.setViewVisibility(R.id.widget_image, View.VISIBLE)
+                        } else {
+                            views.setViewVisibility(R.id.widget_image, View.GONE)
+                        }
+                    } else {
+                        views.setViewVisibility(R.id.widget_image, View.GONE)
+                    }
+                } catch (_: Exception) {
+                    views.setViewVisibility(R.id.widget_image, View.GONE)
+                }
+            } else {
+                views.setViewVisibility(R.id.widget_image, View.GONE)
             }
-            views.setTextViewText(R.id.widget_message, displayContent)
+
+            // --- Message content ---
+            views.setTextViewText(
+                R.id.widget_message,
+                if (messageContent.isNotEmpty()) messageContent else if (imagePath.isNotEmpty()) "" else "No messages yet"
+            )
+            // Hide text if only photo with no caption
+            if (messageContent.isEmpty() && imagePath.isNotEmpty()) {
+                views.setViewVisibility(R.id.widget_message, View.GONE)
+            } else {
+                views.setViewVisibility(R.id.widget_message, View.VISIBLE)
+            }
             trySetTextColor(views, R.id.widget_message, textColor)
 
             // --- Timestamp ---

@@ -48,6 +48,16 @@
         android:scaleType="fitXY"
         android:contentDescription="@null" />
 
+    <!-- Message photo (hidden by default, shown when image exists) -->
+    <ImageView
+        android:id="@+id/widget_image"
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:scaleType="centerCrop"
+        android:visibility="gone"
+        android:contentDescription="@null"
+        android:clipToOutline="true" />
+
     <!-- Message content -->
     <TextView
         android:id="@+id/widget_message"
