@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -44,8 +45,18 @@ class _CoupleLinkScreenState extends ConsumerState<CoupleLinkScreen> {
   /// doesn't have to re-link after logging out and back in.
   Future<void> _checkExistingCouple() async {
     try {
-      final user = ref.read(currentUserProvider);
+      // The auth provider may not have settled yet (e.g. after a
+      // router redirect racing against the login flow).  Wait briefly
+      // and retry once if the user is still null.
+      var user = ref.read(currentUserProvider);
       if (user == null) {
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+        if (!mounted) return;
+        user = ref.read(currentUserProvider);
+      }
+
+      if (user == null) {
+        debugPrint('[CoupleLinkScreen] currentUser is null – skipping couple check');
         if (mounted) setState(() => _checkingExisting = false);
         return;
       }
@@ -66,8 +77,11 @@ class _CoupleLinkScreenState extends ConsumerState<CoupleLinkScreen> {
         context.goNamed(RouteNames.home);
         return;
       }
-    } catch (_) {
-      // Network error — fall through to the manual link UI.
+
+      debugPrint('[CoupleLinkScreen] No active couple found for ${user.id}');
+    } catch (e) {
+      // Network / RLS error — fall through to the manual link UI.
+      debugPrint('[CoupleLinkScreen] _checkExistingCouple error: $e');
     }
 
     if (mounted) setState(() => _checkingExisting = false);

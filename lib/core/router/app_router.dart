@@ -93,16 +93,20 @@ final routerProvider = Provider<GoRouter>((ref) {
         return publicPaths.contains(currentPath) ? null : RoutePaths.login;
       }
 
+      // Authenticated users on public paths (login / signup):
+      // Let the screen's own post-sign-in flow complete (profile check →
+      // couple check → navigate).  If the router redirected here it would
+      // race against the login screen and the couple-link check would
+      // never run.
+      if (publicPaths.contains(currentPath)) {
+        return null;
+      }
+
       // Authenticated but no couple link yet.
       if (!isCoupleLinked &&
           currentPath != RoutePaths.coupleLink &&
           currentPath != RoutePaths.profileSetup) {
         return RoutePaths.coupleLink;
-      }
-
-      // Authenticated users trying to visit login/signup should go home.
-      if (publicPaths.contains(currentPath)) {
-        return RoutePaths.home;
       }
 
       return null;

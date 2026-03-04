@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -105,6 +106,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message)),
       );
+    } catch (e) {
+      // Non-auth error (e.g. couple check, profile check, RLS issue).
+      // The user IS signed in at this point — fall back to couple-link
+      // so _checkExistingCouple() can retry the Supabase query.
+      debugPrint('[LoginScreen] Post-sign-in error: $e');
+      if (!mounted) return;
+      context.goNamed(RouteNames.coupleLink);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
