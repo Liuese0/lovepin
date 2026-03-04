@@ -4,8 +4,10 @@ import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
 import java.io.File
@@ -89,18 +91,24 @@ class LovepinWidgetProvider : AppWidgetProvider() {
             if (imagePath.isNotEmpty()) {
                 try {
                     val file = File(imagePath)
-                    if (file.exists()) {
-                        val bitmap = BitmapFactory.decodeFile(file.absolutePath)
-                        if (bitmap != null) {
-                            views.setImageViewBitmap(R.id.widget_image, bitmap)
+                    Log.d("LovepinWidget", "Image path: $imagePath, exists: ${file.exists()}, size: ${if (file.exists()) file.length() else 0}")
+                    if (file.exists() && file.length() > 0) {
+                        // Scale down to fit widget and stay under Binder IPC limit
+                        val scaled = decodeScaledBitmap(file.absolutePath, 500, 300)
+                        if (scaled != null) {
+                            views.setImageViewBitmap(R.id.widget_image, scaled)
                             views.setViewVisibility(R.id.widget_image, View.VISIBLE)
+                            Log.d("LovepinWidget", "Image set: ${scaled.width}x${scaled.height}")
                         } else {
+                            Log.w("LovepinWidget", "Failed to decode bitmap")
                             views.setViewVisibility(R.id.widget_image, View.GONE)
                         }
                     } else {
+                        Log.w("LovepinWidget", "Image file missing or empty")
                         views.setViewVisibility(R.id.widget_image, View.GONE)
                     }
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    Log.e("LovepinWidget", "Image load error", e)
                     views.setViewVisibility(R.id.widget_image, View.GONE)
                 }
             } else {
@@ -130,6 +138,30 @@ class LovepinWidgetProvider : AppWidgetProvider() {
             }
 
             appWidgetManager.updateAppWidget(appWidgetId, views)
+        }
+
+        /**
+         * Decode a bitmap from [path] scaled down so neither dimension exceeds
+         * [maxW]×[maxH].  This keeps the Binder transaction well under the ~1 MB
+         * limit that RemoteViews imposes.
+         */
+        private fun decodeScaledBitmap(path: String, maxW: Int, maxH: Int): Bitmap? {
+            // First pass — read dimensions only
+            val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(path, opts)
+            val w = opts.outWidth
+            val h = opts.outHeight
+            if (w <= 0 || h <= 0) return null
+
+            // Calculate inSampleSize (power of 2)
+            var sampleSize = 1
+            while (w / sampleSize > maxW || h / sampleSize > maxH) {
+                sampleSize *= 2
+            }
+
+            // Second pass — decode with downsampling
+            val decodeOpts = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+            return BitmapFactory.decodeFile(path, decodeOpts)
         }
 
         private fun trySetTextColor(views: RemoteViews, viewId: Int, hexColor: String) {

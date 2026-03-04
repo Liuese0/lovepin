@@ -230,24 +230,43 @@ class WidgetService {
   // ---------------------------------------------------------------------------
 
   /// Download an image from [url] and save it as `widget_image.jpg` in the
-  /// app's temporary directory.  Returns the absolute file path on success,
-  /// or `null` on failure.
+  /// app's documents directory (internal storage, always accessible by the
+  /// widget provider).  Returns the absolute file path on success, or `null`
+  /// on failure.
   static Future<String?> _downloadWidgetImage(String url) async {
     try {
-      final dir = await getTemporaryDirectory();
+      debugPrint('[WidgetService] Downloading widget image: $url');
+
+      final dir = await getApplicationDocumentsDirectory();
       final file = File('${dir.path}/widget_image.jpg');
 
       final client = HttpClient();
       final request = await client.getUrl(Uri.parse(url));
       final response = await request.close();
 
+      debugPrint('[WidgetService] Image response status: ${response.statusCode}');
+
       if (response.statusCode == 200) {
         final bytes = await consolidateHttpClientResponseBytes(response);
         await file.writeAsBytes(bytes);
         client.close();
+        debugPrint('[WidgetService] Image saved to: ${file.path} '
+            '(${bytes.length} bytes)');
         return file.path;
       }
+
+      // Follow redirects (3xx)
+      if (response.statusCode >= 300 && response.statusCode < 400) {
+        final location = response.headers.value('location');
+        client.close();
+        if (location != null) {
+          debugPrint('[WidgetService] Following redirect: $location');
+          return _downloadWidgetImage(location);
+        }
+      }
+
       client.close();
+      debugPrint('[WidgetService] Image download failed: HTTP ${response.statusCode}');
     } catch (e) {
       debugPrint('[WidgetService] Image download failed: $e');
     }
