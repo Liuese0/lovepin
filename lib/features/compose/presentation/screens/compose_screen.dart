@@ -15,6 +15,7 @@ import 'package:lovepin/data/supabase/message_repository.dart';
 import 'package:lovepin/data/supabase/template_repository.dart';
 import 'package:lovepin/features/auth/providers/auth_provider.dart';
 import 'package:lovepin/features/home/presentation/screens/home_screen.dart';
+import 'package:lovepin/services/widget_service.dart';
 
 /// Provider that loads message templates.
 final templatesProvider =
@@ -105,7 +106,15 @@ class _ComposeScreenState extends ConsumerState<ComposeScreen> {
       _messageController.clear();
       setState(() => _selectedImage = null);
 
-      // Refresh message feed.
+      // Update home screen widget immediately with the sent message.
+      final myName = LocalCache.instance.getMyDisplayName() ?? 'You';
+      await WidgetService.updateWidget(
+        message,
+        senderName: myName,
+        userId: user.id,
+      );
+
+      // Refresh message feed (if home screen is visible).
       ref.invalidate(messageFeedProvider);
 
       ScaffoldMessenger.of(context).showSnackBar(

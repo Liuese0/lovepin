@@ -33,21 +33,25 @@ FutureProvider.autoDispose<List<MessageModel>>((ref) async {
     await WidgetService.clearIfOwnerChanged(currentUser.id);
   }
 
-  // Update the home screen widget with the latest *partner* message only.
+  // Update the home screen widget with the latest message.
   if (messages.isNotEmpty && currentUser != null) {
-    final partnerMessage = messages.cast<MessageModel?>().firstWhere(
-      (m) => m!.senderId != currentUser.id,
-      orElse: () => null,
-    );
-    if (partnerMessage != null) {
-      await WidgetService.updateWidget(
-        partnerMessage,
-        senderName: partnerName,
-        userId: currentUser.id,
-      );
-    }
+    final latest = messages.first;
+    final isPartner = latest.senderId != currentUser.id;
+    final displayName = isPartner
+        ? partnerName
+        : (LocalCache.instance.getMyDisplayName() ?? 'You');
 
-    // Start realtime subscription so the widget auto-updates on new messages.
+    await WidgetService.updateWidget(
+      latest,
+      senderName: displayName,
+      userId: currentUser.id,
+    );
+  }
+
+  // Start realtime subscription so the widget auto-updates on new messages.
+  // Must run even when the message list is empty so that the very first
+  // partner message triggers a widget update.
+  if (currentUser != null && coupleId.isNotEmpty) {
     RealtimeMessageService.instance.start(
       coupleId: coupleId,
       currentUserId: currentUser.id,

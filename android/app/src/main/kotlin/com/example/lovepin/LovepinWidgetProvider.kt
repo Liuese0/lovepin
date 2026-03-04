@@ -44,6 +44,7 @@ class LovepinWidgetProvider : AppWidgetProvider() {
             val messageContent = prefs.getString("message_content", null) ?: ""
             val senderName = prefs.getString("sender_name", null) ?: ""
             val timestamp = prefs.getString("message_timestamp", null) ?: ""
+            val imagePath = prefs.getString("image_path", null) ?: ""
 
             // Theme colours
             val bgColor = prefs.getString("theme_background_color", "#FFD6E0") ?: "#FFD6E0"
@@ -68,9 +69,10 @@ class LovepinWidgetProvider : AppWidgetProvider() {
             } catch (_: Exception) {
             }
 
-            // --- Sender name (with "From" prefix) ---
+            // --- Sender name ---
             val displayName = if (senderName.isNotEmpty()) senderName else "Your Love"
-            views.setTextViewText(R.id.widget_sender, "From $displayName")
+            val senderLabel = if (displayName == "You") "You" else "From $displayName"
+            views.setTextViewText(R.id.widget_sender, senderLabel)
             trySetTextColor(views, R.id.widget_sender, accentColor)
 
             // --- Divider colour (accent with transparency) ---
@@ -81,11 +83,15 @@ class LovepinWidgetProvider : AppWidgetProvider() {
             } catch (_: Exception) {
             }
 
-            // --- Message content ---
-            views.setTextViewText(
-                R.id.widget_message,
-                if (messageContent.isNotEmpty()) messageContent else "No messages yet"
-            )
+            // --- Message content (with photo indicator) ---
+            val hasImage = imagePath.isNotEmpty()
+            val displayContent = when {
+                messageContent.isNotEmpty() && hasImage -> "\uD83D\uDCF7 $messageContent"
+                hasImage -> "\uD83D\uDCF7 Photo"
+                messageContent.isNotEmpty() -> messageContent
+                else -> "No messages yet"
+            }
+            views.setTextViewText(R.id.widget_message, displayContent)
             trySetTextColor(views, R.id.widget_message, textColor)
 
             // --- Timestamp ---

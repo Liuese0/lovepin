@@ -85,16 +85,18 @@ class RealtimeMessageService {
       final newRecord = payload.newRecord;
       final message = MessageModel.fromJson(newRecord);
 
-      // Only update widget for partner's messages, not our own.
-      if (message.senderId != currentUserId) {
-        WidgetService.updateWidget(
-          message,
-          senderName: partnerName,
-          userId: currentUserId,
-        );
-        debugPrint(
-            '[RealtimeMessageService] Widget updated with partner message.');
-      }
+      // Update widget for every new message (partner or own).
+      final isPartner = message.senderId != currentUserId;
+      final displayName = isPartner ? partnerName : 'You';
+
+      WidgetService.updateWidget(
+        message,
+        senderName: displayName,
+        userId: currentUserId,
+      );
+
+      debugPrint('[RealtimeMessageService] Widget updated '
+          '(${isPartner ? "partner" : "own"} message).');
     } catch (e) {
       debugPrint('[RealtimeMessageService] Failed to handle message: $e');
     }
